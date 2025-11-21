@@ -10,7 +10,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // Дозволити доступ до всіх адрес
-                .allowedOrigins("http://localhost:5173") // Твій Vue.js порт (перевір, чи він саме такий)
+                .allowedOrigins("http://localhost:5173",
+                "https://antiquelife.onrender.com/") // Твій Vue.js порт (перевір, чи він саме такий)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Дозволені методи
                 .allowedHeaders("*")
                 .allowCredentials(true);
