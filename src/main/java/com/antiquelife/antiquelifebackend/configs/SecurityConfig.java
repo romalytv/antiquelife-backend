@@ -1,4 +1,4 @@
-package com.antiquelife.antiquelifebackend.security;
+package com.antiquelife.antiquelifebackend.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
