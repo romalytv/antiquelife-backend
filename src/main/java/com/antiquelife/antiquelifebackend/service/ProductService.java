@@ -1,6 +1,10 @@
-package com.antiquelife.antiquelifebackend;
+package com.antiquelife.antiquelifebackend.service;
 
+import com.antiquelife.antiquelifebackend.entity.Category;
+import com.antiquelife.antiquelifebackend.entity.Product;
 import com.antiquelife.antiquelifebackend.dto.ProductRequest;
+import com.antiquelife.antiquelifebackend.repo.CategoryRepository;
+import com.antiquelife.antiquelifebackend.repo.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

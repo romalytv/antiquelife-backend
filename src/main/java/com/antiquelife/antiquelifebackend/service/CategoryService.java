@@ -1,7 +1,7 @@
-package com.antiquelife.antiquelifebackend;
+package com.antiquelife.antiquelifebackend.service;
 
-import com.antiquelife.antiquelifebackend.Category;
-import com.antiquelife.antiquelifebackend.CategoryRepository;
+import com.antiquelife.antiquelifebackend.entity.Category;
+import com.antiquelife.antiquelifebackend.repo.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

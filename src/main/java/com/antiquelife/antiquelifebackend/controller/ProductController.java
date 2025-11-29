@@ -1,6 +1,8 @@
-package com.antiquelife.antiquelifebackend;
+package com.antiquelife.antiquelifebackend.controller;
 
 import com.antiquelife.antiquelifebackend.dto.ProductRequest;
+import com.antiquelife.antiquelifebackend.entity.Product;
+import com.antiquelife.antiquelifebackend.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

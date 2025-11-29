@@ -1,4 +1,4 @@
-package com.antiquelife.antiquelifebackend;
+package com.antiquelife.antiquelifebackend.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

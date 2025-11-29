@@ -1,4 +1,4 @@
-package com.antiquelife.antiquelifebackend;
+package com.antiquelife.antiquelifebackend.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
