@@ -16,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/ai")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = "https://antiquelife.onrender.com", allowCredentials = "true")
 public class AIController {
 
     @Value("${openai.api.key}")
