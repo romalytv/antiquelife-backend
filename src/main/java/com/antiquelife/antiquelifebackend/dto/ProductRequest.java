@@ -10,5 +10,7 @@ public class ProductRequest {
     private String status;
     private String epoch;
     private String origin;
+    private String image_path;
     private Long categoryId; // Тут ми приймаємо просто ID
+
 }
