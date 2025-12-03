@@ -116,6 +116,7 @@ public class AdminProductController {
         product.setEpoch(request.getEpoch());
         product.setOrigin(request.getOrigin());
         product.setCategory(category);
+        product.setQuantity(request.getQuantity());
 
         // Оновлюємо картинку тільки якщо вона змінилась (не null)
         if (imageUrl != null) {
