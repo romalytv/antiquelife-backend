@@ -54,6 +54,12 @@ public class TokenFilter extends OncePerRequestFilter {
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     userDetails = userDetailsService.loadUserByUsername(username);
 
+                    // --- DEBUG START ---
+                    System.out.println("=== DEBUG SECURITY ===");
+                    System.out.println("User: " + username);
+                    System.out.println("Authorities from DB: " + userDetails.getAuthorities());
+                    // --- DEBUG END ---
+
                     // Створюємо об'єкт аутентифікації
                     auth = new UsernamePasswordAuthenticationToken(
                             userDetails,
