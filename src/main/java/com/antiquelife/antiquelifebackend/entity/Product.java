@@ -23,7 +23,7 @@ public class Product {
     private String description;
 
     @Column(nullable = false)
-    private double price;
+    private Double price;
 
     @Column(nullable = false)
     private String status;
@@ -42,7 +42,7 @@ public class Product {
     private Category category;
 
     @Column
-    private double quantity;
+    private Double quantity;
 
 
 }
