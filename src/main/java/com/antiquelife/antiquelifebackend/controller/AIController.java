@@ -16,7 +16,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/ai")
-@CrossOrigin(origins = "https://antiquelife.onrender.com", allowCredentials = "true")
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "https://antiquelife.onrender.com"
+}, allowCredentials = "true")
 public class AIController {
 
     @Value("${openai.api.key}")
@@ -36,7 +39,11 @@ public class AIController {
         headers.setBearerAuth(OPENAI_API_KEY);
         headers.add("OpenAI-Project", OPENAI_PROJECT_ID); // вставити свій
 
-        String imageUrl = request.getImageBase64();
+        String imageUrl = request.getImageBase64()
+                .replace("data:image/png;base64,", "")
+                .replace("data:image/jpeg;base64,", "")
+                .replace("data:image/jpg;base64,", "")
+                .trim();
 
         // 1. Формуємо повідомлення
         String prompt = """
@@ -62,22 +69,25 @@ public class AIController {
                💙 Стан: (оціни візуально)
             """;
 
-        Map<String, Object> textContent = new HashMap<>();
-        textContent.put("type", "text");
-        textContent.put("text", prompt);
+        Map<String, Object> textContent = Map.of(
+                "type", "input_text",
+                "text", prompt
+        );
         // --- КІНЕЦЬ ЗМІН ---
-        Map<String, Object> imageContent = new HashMap<>();
-        imageContent.put("type", "image_url");
-        imageContent.put("image_url", Map.of("url", imageUrl));
+        Map<String, Object> imageContent = Map.of(
+                "type", "input_image",
+                "image_url", "data:image/jpeg;base64," + imageUrl
+        );
 
-        Map<String, Object> userMessage = new HashMap<>();
-        userMessage.put("role", "user");
-        userMessage.put("content", List.of(textContent, imageContent));
+        Map<String, Object> userMsg = Map.of(
+                "role", "user",
+                "content", List.of(textContent, imageContent)
+        );
 
         // 2. Формуємо тіло запиту (зверніть увагу: messages, а не input)
         Map<String, Object> payload = new HashMap<>();
-        payload.put("model", "gpt-4o-mini");
-        payload.put("messages", Collections.singletonList(userMessage));
+        payload.put("model", "gpt-5.1-instant");
+        payload.put("messages", Collections.singletonList(userMsg));
         payload.put("max_tokens", 600);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
