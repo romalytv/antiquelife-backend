@@ -13,21 +13,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/admin/products") // Базовий шлях для всіх методів
+@RequestMapping("/admin/products")
 public class AdminProductController {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ImageService imageService;
-    private final ObjectMapper objectMapper; // Для перетворення рядка JSON в об'єкт
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public AdminProductController(ProductRepository productRepository, CategoryRepository categoryRepository,  ImageService imageService, ObjectMapper objectMapper) {
+    public AdminProductController(ProductRepository productRepository, CategoryRepository categoryRepository, ImageService imageService, ObjectMapper objectMapper) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.imageService = imageService;
@@ -54,21 +55,30 @@ public class AdminProductController {
 
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createProduct(
-            @RequestPart("product") String productJson, // JSON прийде як рядок
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestPart("product") String productJson,
+            // 👇 ЗМІНА 1: Приймаємо список файлів
+            @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) {
         try {
-            // 1. Ручний парсинг JSON (це найнадійніший спосіб при роботі з файлами)
             ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
+            Product product = new Product();
 
-            // 2. Якщо є файл — вантажимо через твій сервіс
-            String imageUrl = null;
-            if (image != null && !image.isEmpty()) {
-                imageUrl = imageService.uploadImage(image);
+            // Логіка збору картинок
+            List<String> finalImages = new ArrayList<>();
+
+            // 1. Завантажуємо нові (якщо є)
+            if (images != null) {
+                for (MultipartFile file : images) {
+                    String url = imageService.uploadImage(file);
+                    finalImages.add(url);
+                }
             }
 
-            // 3. Зберігаємо в БД
-            return saveProductToDb(new Product(), request, imageUrl);
+            // Валідація кількості (1-10)
+            if (finalImages.isEmpty()) return ResponseEntity.badRequest().body("Має бути хоча б 1 фото");
+            if (finalImages.size() > 10) return ResponseEntity.badRequest().body("Максимум 10 фото");
+
+            return saveProductToDb(product, request, finalImages);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,12 +86,12 @@ public class AdminProductController {
         }
     }
 
-    // --- UPDATE ---
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateProduct(
             @PathVariable UUID id,
             @RequestPart("product") String productJson,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            // 👇 ЗМІНА 2: Приймаємо список нових файлів
+            @RequestPart(value = "images", required = false) List<MultipartFile> newImages
     ) {
         try {
             Product existingProduct = productRepository.findById(id)
@@ -89,15 +99,27 @@ public class AdminProductController {
 
             ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
 
-            // Логіка оновлення фото:
-            // Якщо прислали нове фото -> вантажимо і оновлюємо URL
-            // Якщо фото null -> залишаємо старе посилання
-            String imageUrl = existingProduct.getImage_path();
-            if (image != null && !image.isEmpty()) {
-                imageUrl = imageService.uploadImage(image);
+            // Логіка збору картинок: СТАРІ (з JSON) + НОВІ (з файлів)
+            List<String> finalImages = new ArrayList<>();
+
+            // 1. Додаємо старі, які юзер залишив (вони приходять в JSON)
+            if (request.getImageUrls() != null) {
+                finalImages.addAll(request.getImageUrls());
             }
 
-            return saveProductToDb(existingProduct, request, imageUrl);
+            // 2. Додаємо нові завантажені
+            if (newImages != null) {
+                for (MultipartFile file : newImages) {
+                    String url = imageService.uploadImage(file);
+                    finalImages.add(url);
+                }
+            }
+
+            // Валідація
+            if (finalImages.isEmpty()) return ResponseEntity.badRequest().body("Має залишитись хоча б 1 фото");
+            if (finalImages.size() > 10) return ResponseEntity.badRequest().body("Максимум 10 фото");
+
+            return saveProductToDb(existingProduct, request, finalImages);
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Помилка оновлення: " + e.getMessage());
@@ -105,7 +127,7 @@ public class AdminProductController {
     }
 
     // --- Helper Method ---
-    private ResponseEntity<?> saveProductToDb(Product product, ProductRequest request, String imageUrl) {
+    private ResponseEntity<?> saveProductToDb(Product product, ProductRequest request, List<String> imageUrls) {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Категорію не знайдено"));
 
@@ -117,11 +139,7 @@ public class AdminProductController {
         product.setOrigin(request.getOrigin());
         product.setCategory(category);
         product.setQuantity(request.getQuantity());
-
-        // Оновлюємо картинку тільки якщо вона змінилась (не null)
-        if (imageUrl != null) {
-            product.setImage_path(imageUrl);
-        }
+        product.setImageUrls(imageUrls);
 
         Product saved = productRepository.save(product);
         return ResponseEntity.ok(saved);

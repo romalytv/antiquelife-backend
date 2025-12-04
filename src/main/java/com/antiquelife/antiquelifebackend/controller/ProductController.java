@@ -32,10 +32,10 @@ public class ProductController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Product> create(
             @RequestPart("product") ProductRequest request,
-            @RequestPart("image") MultipartFile image
+            @RequestPart("images") List<MultipartFile> images
     ) {
         try {
-            Product createdProduct = productService.createProduct(request, image);
+            Product createdProduct = productService.createProduct(request, images);
             return ResponseEntity.ok(createdProduct);
         } catch (IOException e) {
             return ResponseEntity.status(500).build();
