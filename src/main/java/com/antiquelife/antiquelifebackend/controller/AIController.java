@@ -9,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/admin/ai")
@@ -28,7 +25,7 @@ public class AIController {
     @Value("${openai.project.id}")
     private String OPENAI_PROJECT_ID;
 
-    private final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+    private final String OPENAI_URL = "https://api.openai.com/v1/responses";
 
     @PostMapping("/scan")
     public ResponseEntity<?> scanImage(@RequestBody AIRequest request) {
@@ -39,11 +36,7 @@ public class AIController {
         headers.setBearerAuth(OPENAI_API_KEY);
         headers.add("OpenAI-Project", OPENAI_PROJECT_ID); // вставити свій
 
-        String imageUrl = request.getImageBase64()
-                .replace("data:image/png;base64,", "")
-                .replace("data:image/jpeg;base64,", "")
-                .replace("data:image/jpg;base64,", "")
-                .trim();
+        List<Map<String, Object>> contentList = new ArrayList<>();
 
         // 1. Формуємо повідомлення
         String prompt = """
@@ -69,26 +62,39 @@ public class AIController {
                💙 Стан: (оціни візуально)
             """;
 
-        Map<String, Object> textContent = Map.of(
+// Формуємо контент повідомлення (спочатку текст)
+        contentList.add(Map.of(
                 "type", "input_text",
                 "text", prompt
-        );
-        // --- КІНЕЦЬ ЗМІН ---
-        Map<String, Object> imageContent = Map.of(
-                "type", "input_image",
-                "image_url", "data:image/jpeg;base64," + imageUrl
-        );
+        ));
 
+// Додаємо всі зображення
+        if (request.getImages() != null) {
+            for (String base64Image : request.getImages()) {
+
+                // Якщо прилітає чистий base64 – додаємо data URI
+                if (!base64Image.startsWith("data:")) {
+                    base64Image = "data:image/jpeg;base64," + base64Image;
+                }
+
+                contentList.add(Map.of(
+                        "type", "input_image",
+                        "image_url", base64Image   // <-- А НЕ image, А НЕ {url: ...}
+                ));
+            }
+        }
+
+// user message
         Map<String, Object> userMsg = Map.of(
                 "role", "user",
-                "content", List.of(textContent, imageContent)
+                "content", contentList
         );
 
-        // 2. Формуємо тіло запиту (зверніть увагу: messages, а не input)
+// === НОВИЙ ПРАВИЛЬНИЙ PAYLOAD ===
         Map<String, Object> payload = new HashMap<>();
-        payload.put("model", "gpt-5.1-instant");
-        payload.put("messages", Collections.singletonList(userMsg));
-        payload.put("max_tokens", 600);
+        payload.put("model", "gpt-5.1");
+        payload.put("input", List.of(userMsg));   // <── ДУЖЕ ВАЖЛИВО
+        payload.put("max_output_tokens", 1000);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
 
